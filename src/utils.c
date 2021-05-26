@@ -203,7 +203,26 @@ void pm(int M, int N, float *A)
     printf("\n");
 }
 
-void find_replace(const char* str, char* orig, char* rep, char* output)
+void rev_str(char* str)
+{
+    if (!str || ! *str)
+        return;
+
+    int i = strlen(str) - 1, j = 0;
+
+    char ch;
+    while (i > j)
+    {
+        ch = str[i];
+        str[i] = str[j];
+        str[j] = ch;
+        i--;
+        j++;
+    }
+    return;
+}
+
+bool find_replace(const char* str, char* orig, char* rep, char* output)
 {
     char* buffer = (char*)calloc(8192, sizeof(char));
     char *p;
@@ -212,13 +231,45 @@ void find_replace(const char* str, char* orig, char* rep, char* output)
     if (!(p = strstr(buffer, orig))) {  // Is 'orig' even in 'str'?
         sprintf(output, "%s", buffer);
         free(buffer);
-        return;
+        return false;
     }
 
     *p = '\0';
 
     sprintf(output, "%s%s%s", buffer, rep, p + strlen(orig));
     free(buffer);
+    return true;
+}
+
+bool find_replace_last(const char* str, char* orig, char* rep, char* output)
+{
+    char* buffer_r = (char*)calloc(8192, sizeof(char));
+    sprintf(buffer_r, "%s", str);
+    rev_str(buffer_r);
+    char* orig_r = (char*)calloc(8192, sizeof(char));
+    sprintf(orig_r, "%s", orig);
+    rev_str(orig_r);
+    char* rep_r  = (char*)calloc(8192, sizeof(char));
+    sprintf(rep_r, "%s", rep);
+    rev_str(rep_r);
+    
+    char *p;
+    if (!(p = strstr(buffer_r, orig_r))) {  // Is 'orig' even in 'str'?
+        sprintf(output, "%s", str);
+        free(buffer_r);
+        free(orig_r);
+        free(rep_r);
+        return false;
+    }
+
+    *p = '\0';
+
+    sprintf(output, "%s%s%s", buffer_r, rep_r, p + strlen(orig_r));
+    rev_str(output);
+    free(buffer_r);
+    free(orig_r);
+    free(rep_r);
+    return true;
 }
 
 void trim(char *str)
@@ -239,7 +290,7 @@ void trim(char *str)
     free(buffer);
 }
 
-void find_replace_extension(char *str, char *orig, char *rep, char *output)
+bool find_replace_extension(char *str, char *orig, char *rep, char *output)
 {
     char* buffer = (char*)calloc(8192, sizeof(char));
 
@@ -250,48 +301,55 @@ void find_replace_extension(char *str, char *orig, char *rep, char *output)
     if (!p || chars_from_end != strlen(orig)) {  // Is 'orig' even in 'str' AND is 'orig' found at the end of 'str'?
         sprintf(output, "%s", buffer);
         free(buffer);
-        return;
+        return false;
     }
 
     *p = '\0';
     sprintf(output, "%s%s%s", buffer, rep, p + strlen(orig));
     free(buffer);
+    return true;
 }
 
 void replace_image_to_label(const char* input_path, char* output_path)
 {
-    find_replace(input_path, "/images/train2017/", "/labels/train2017/", output_path);    // COCO
-    find_replace(output_path, "/images/val2017/", "/labels/val2017/", output_path);        // COCO
-    find_replace(output_path, "/JPEGImages/", "/labels/", output_path);    // PascalVOC
-    find_replace(output_path, "\\images\\train2017\\", "\\labels\\train2017\\", output_path);    // COCO
-    find_replace(output_path, "\\images\\val2017\\", "\\labels\\val2017\\", output_path);        // COCO
+    do
+    {
+        if (find_replace(input_path, "/images/train2017/", "/labels/train2017/", output_path)) break;    // COCO
+        if (find_replace(output_path, "/images/val2017/", "/labels/val2017/", output_path)) break;        // COCO
+        if (find_replace(output_path, "/JPEGImages/", "/labels/", output_path)) break;    // PascalVOC
+        if (find_replace(output_path, "\\images\\train2017\\", "\\labels\\train2017\\", output_path)) break;    // COCO
+        if (find_replace(output_path, "\\images\\val2017\\", "\\labels\\val2017\\", output_path)) break;        // COCO
 
-    find_replace(output_path, "\\images\\train2014\\", "\\labels\\train2014\\", output_path);    // COCO
-    find_replace(output_path, "\\images\\val2014\\", "\\labels\\val2014\\", output_path);        // COCO
-    find_replace(output_path, "/images/train2014/", "/labels/train2014/", output_path);    // COCO
-    find_replace(output_path, "/images/val2014/", "/labels/val2014/", output_path);        // COCO
+        if (find_replace(output_path, "\\images\\train2014\\", "\\labels\\train2014\\", output_path)) break;    // COCO
+        if (find_replace(output_path, "\\images\\val2014\\", "\\labels\\val2014\\", output_path)) break;        // COCO
+        if (find_replace(output_path, "/images/train2014/", "/labels/train2014/", output_path)) break;    // COCO
+        if (find_replace(output_path, "/images/val2014/", "/labels/val2014/", output_path)) break;        // COCO
 
-    find_replace(output_path, "\\JPEGImages\\", "\\labels\\", output_path);    // PascalVOC
-    //find_replace(output_path, "/images/", "/labels/", output_path);    // COCO
-    //find_replace(output_path, "/VOC2007/JPEGImages/", "/VOC2007/labels/", output_path);        // PascalVOC
-    //find_replace(output_path, "/VOC2012/JPEGImages/", "/VOC2012/labels/", output_path);        // PascalVOC
+        if (find_replace(output_path, "\\JPEGImages\\", "\\labels\\", output_path)) break;    // PascalVOC
+        if (find_replace_last(output_path, "/images/", "/labels/", output_path)) break;  //  replaces the last subfolder 'images' to 'labels'
+        //find_replace(output_path, "/VOC2007/JPEGImages/", "/VOC2007/labels/", output_path);        // PascalVOC
+        //find_replace(output_path, "/VOC2012/JPEGImages/", "/VOC2012/labels/", output_path);        // PascalVOC
+        //find_replace(output_path, "/raw/", "/labels/", output_path);
+    } while (false);
 
-    //find_replace(output_path, "/raw/", "/labels/", output_path);
     trim(output_path);
 
     // replace only ext of files
-    find_replace_extension(output_path, ".jpg", ".txt", output_path);
-    find_replace_extension(output_path, ".JPG", ".txt", output_path); // error
-    find_replace_extension(output_path, ".jpeg", ".txt", output_path);
-    find_replace_extension(output_path, ".JPEG", ".txt", output_path);
-    find_replace_extension(output_path, ".png", ".txt", output_path);
-    find_replace_extension(output_path, ".PNG", ".txt", output_path);
-    find_replace_extension(output_path, ".bmp", ".txt", output_path);
-    find_replace_extension(output_path, ".BMP", ".txt", output_path);
-    find_replace_extension(output_path, ".ppm", ".txt", output_path);
-    find_replace_extension(output_path, ".PPM", ".txt", output_path);
-    find_replace_extension(output_path, ".tiff", ".txt", output_path);
-    find_replace_extension(output_path, ".TIFF", ".txt", output_path);
+    do
+    {
+        if (find_replace_extension(output_path, ".jpg", ".txt", output_path)) break;
+        if (find_replace_extension(output_path, ".JPG", ".txt", output_path)) break;
+        if (find_replace_extension(output_path, ".jpeg", ".txt", output_path)) break;
+        if (find_replace_extension(output_path, ".JPEG", ".txt", output_path)) break;
+        if (find_replace_extension(output_path, ".png", ".txt", output_path)) break;
+        if (find_replace_extension(output_path, ".PNG", ".txt", output_path)) break;
+        if (find_replace_extension(output_path, ".bmp", ".txt", output_path)) break;
+        if (find_replace_extension(output_path, ".BMP", ".txt", output_path)) break;
+        if (find_replace_extension(output_path, ".ppm", ".txt", output_path)) break;
+        if (find_replace_extension(output_path, ".PPM", ".txt", output_path)) break;
+        if (find_replace_extension(output_path, ".tiff", ".txt", output_path)) break;
+        if (find_replace_extension(output_path, ".TIFF", ".txt", output_path)) break;
+    } while (false);
 
     // Check file ends with txt:
     if(strlen(output_path) > 4) {
