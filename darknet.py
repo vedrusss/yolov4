@@ -97,7 +97,7 @@ def class_colors(names):
         random.randint(0, 255)) for name in names}
 
 
-def load_network(config_file, data_file, weights, batch_size=1):
+def load_network(config_file, data_file, weights, batch_size=1, gpu_id=0):
     """
     load model description and weights from config files
     args:
@@ -109,6 +109,7 @@ def load_network(config_file, data_file, weights, batch_size=1):
         class_names
         class_colors
     """
+    set_gpu(gpu_id)
     network = load_net_custom(
         config_file.encode("ascii"),
         weights.encode("ascii"), 0, batch_size)
